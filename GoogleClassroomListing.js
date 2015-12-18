@@ -1,10 +1,23 @@
-function listClasses(){
+/* 
 
-  //by Charlie Love
+  //Adapted from a gist by Charlie Love
   //charlielove.org tw: @charlie_love
   
+  //Listing students count added by Jason Kries @jasonkries
+  //Working as 12-17-2015
+
+In order for this to work, you will need to go to https://script.google.com
+-Click Resources --> Advanced Google Services
+-Enable Admin Directory API and Google Classroom API and Drive API
+-Also click the Google Developers Console link and enable the Admin SDK, Google Classroom API, and Drive API
+-After that running this script will create a new sheets in your sheets.
+-Every time you run it from script.google.com, it will refresh the spreadsheet
+*/
+
+function listClasses(){
+  
   //open a new spreadsheet
-  var my_ss = "Classroom Listing";
+  var my_ss = "Google Classroom Listing / Count";
   var files = DriveApp.getFilesByName(my_ss);
   var file = !files.hasNext() ? SpreadsheetApp.create(my_ss) : files.next();
   var ss = SpreadsheetApp.openById(file.getId())
@@ -14,7 +27,7 @@ function listClasses(){
   } catch (e){;} 
   var sheet = ss.getActiveSheet();
   sheet.clear();
-  sheet.appendRow(["No.","Class Owner","Organization","Creation Date","Course State","Course Section","Course Name"]);
+  sheet.appendRow(["No.","ID","Class Owner","Creation Date","Course State","Course Section","Course Name","StudentCount"]);
   //start at row 0
   var startRow = 0;
 
@@ -35,6 +48,18 @@ function listClasses(){
   
     //loop round
     for ( var i= 0, len = courses.courses.length; i < len; i++) {
+      var courseID =  courses.courses[i].id;
+          var loop = 0;
+          if(loop == 0){
+            try{
+              var students = Classroom.Courses.Students.list(courseID);
+              studentCount = students.students.length;
+            }
+            catch(err){
+              studentCount = 0;
+            }
+              loop++;
+          }
       var courseName =  courses.courses[i].name;
       var courseCreation = courses.courses[i].creationTime;
       var courseUpdated = courses.courses[i].updateTime;
@@ -51,11 +76,10 @@ function listClasses(){
         owner = ownerObj.name.fullName;
         var ou = ownerObj.orgUnitPath;
     
-        ss.getSheets()[0].appendRow([startRow+1,owner,ou,courseCreation,courseState,courseSection, courseName.toString()]);
+        ss.getSheets()[0].appendRow([startRow+1,courseID,owner,courseCreation,courseState,courseSection, courseName.toString(),studentCount]);
         startRow++;  //we've written a row, so add one to start row.
       }
 
   } while (nextPageToken != undefined); //and do this until there are no more pages of results to get
 
 }
-
